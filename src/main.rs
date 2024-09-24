@@ -1,12 +1,14 @@
-use std::{collections::HashMap, env, fs, io::{self, Write}, path::Path};
+use std::{collections::HashMap, env, fs::{self, OpenOptions}, io::{self, Write}, path::Path};
 
 use args::Args;
 use clap::Parser;
 use once_cell::sync::Lazy;
+use simpline::SimpLineReader;
 use walkdir::{DirEntry, WalkDir};
 
 
 mod args;
+mod simpline;
 
 static KNOWN_ALIASES: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
     let mut map = HashMap::new();
@@ -15,9 +17,28 @@ static KNOWN_ALIASES: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
     map
 });
 
-fn main() -> io::Result<()> {
+fn main() -> rustyline::Result<()> {
     let args = Args::parse();
-    process_terms(args.terms)?;
+    let paths = get_all_files();
+
+    if args.terms.is_empty() {
+        // interactive mode
+        let mut filenames = get_filenames(&paths);
+        let keys: Vec<String> = KNOWN_ALIASES.keys().map(|&k| k.to_string()).collect();
+        filenames.extend(keys); // this concat means it's possible to search for aliases but also means hinting will show aliases as well as filenames
+        let slr = SimpLineReader::new("gig> ".into(), filenames);
+        let terms = slr.read_words()?;
+
+        let file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("./.gitignore")?;
+
+        process_terms(terms, &paths, file)?;
+        println!("Wrote to .gitignore");
+    } else {
+        process_terms(args.terms, &paths, io::stdout())?;
+    }
 
     Ok(())
 }
@@ -39,14 +60,19 @@ fn get_all_files() -> Vec<DirEntry> {
         }
     }
     paths
-
 }
 
-fn process_terms(terms: Vec<String>) -> io::Result<()> {
+fn get_filenames(paths: &Vec<DirEntry>) -> Vec<String> {
+    paths.iter().map(|entry| {
+        let s = entry.path().file_name().unwrap().to_string_lossy().to_string().to_lowercase();
+        s[..s.len() - 10].to_string()
+    }).collect()
+}
+
+fn process_terms<W: Write>(terms: Vec<String>, files: &Vec<DirEntry>, mut output: W) -> io::Result<()> {
     let mut matched_files = Vec::new();
 
-    let paths = get_all_files();
-    for entry in &paths {
+    for entry in files {
         for term in &terms {
             let term = match KNOWN_ALIASES.get(&term[..]) {
                 Some(term) => *term,
@@ -65,8 +91,8 @@ fn process_terms(terms: Vec<String>) -> io::Result<()> {
     } else {
         for file_path in matched_files {
             let content = fs::read_to_string(&file_path)?;
-            io::stdout().write_all(content.as_bytes())?;
-            io::stdout().write_all(b"\n")?;
+            output.write_all(content.as_bytes())?;
+            output.write_all(b"\n")?;
         }
     }
 

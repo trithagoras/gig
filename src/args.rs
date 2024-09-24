@@ -5,6 +5,6 @@ use clap::Parser;
 #[command(name = "gig")]
 pub struct Args {
     /// One or more terms
-    #[arg(required = true)]
+    #[arg()]
     pub terms: Vec<String>,
 }
