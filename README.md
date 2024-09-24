@@ -18,8 +18,6 @@ $ gig python vscode
 
 By default, this will print the content of the created `.gitignore` file to the standard output. You can redirect it to a file if you want to save it.
 
-![Inline mode](res/example.gif)
-
 ### Interactive mode
 
 You can also use the tool in interactive mode by running it without arguments:
@@ -29,3 +27,5 @@ $ gig
 ```
 
 This will open a prompt where you can select the templates you want to use. You can select multiple templates by separating them with spaces and has hints to help you choose the right templates. When you are done, press `Enter` to generate the `.gitignore` file to your current directory.
+
+![Inline mode](res/example.gif)
