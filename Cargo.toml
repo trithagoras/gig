@@ -1,7 +1,14 @@
 [package]
 name = "gig"
 version = "0.1.0"
+authors = ["Corey Batchler <coreybatchler7@gmail.com>"]
 edition = "2021"
+license = "MIT"
+description = "A command-line tool for offline standard templated gitignore file generation."
+repository = "https://github.com/trithagoras/gig"
+readme = "README.md"
+keywords = ["cli", "tool"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 clap = { version = "4.5.18", features = ["derive"] }
